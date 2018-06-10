@@ -5,12 +5,18 @@
  */
 package filesystem;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -21,6 +27,10 @@ public class FileSystem {
     public Directorio directorioActual;
     public File file;
     BufferedWriter bw;
+    public ArrayList<Integer> punterosDisco;
+    public int cantidadSectores;
+    public int tamSectores;
+    public int sectoresDisponibles;
     
     //public String rutaActual;
     public int nivelActual;
@@ -34,9 +44,15 @@ public class FileSystem {
         // TODO code application logic here
         FileSystem fileSystem = new FileSystem();
        
-        fileSystem.CRT(5, 8, "Root");
-        fileSystem.FLE("Ronald", "ArchivoNuevo", "txt");
-        fileSystem.MKDIR("Directorio1");
+        fileSystem.CRT(10, 10, "Root");
+        fileSystem.FLE("RonaldBolanosRodriguez", "ArchivoNuevo", "txt");
+        fileSystem.FLE("Hola", "ArchivoNuevo1", "txt");
+         fileSystem.FLE("Mariana Rojas", "ArchivoNuevo2", "txt");
+        fileSystem.TREE();
+        fileSystem.PPT("ArchivoNuevo");
+        fileSystem.PPT("ArchivoNuevo1");
+        fileSystem.PPT("ArchivoNuevo2");
+        /*fileSystem.MKDIR("Directorio1");
         fileSystem.CHDIR("Directorio1");
         fileSystem.MKDIR("Directorio1_1");
         fileSystem.CHDIR("Directorio1_1");
@@ -50,8 +66,7 @@ public class FileSystem {
         fileSystem.CHDIR("..");   
         fileSystem.CHDIR("..");  
         fileSystem.CHDIR(".."); 
-        
-        fileSystem.menu();
+        fileSystem.menu();*/
         return;
     }
     
@@ -207,47 +222,50 @@ public class FileSystem {
    
     //Crear un disco virtual. Raiz y directorio raiz
     public void CRT(int cantidadSectores, int tamSector, String nomRaiz){
+        this.cantidadSectores = cantidadSectores;
+        this.tamSectores = tamSector;
+        this.sectoresDisponibles = cantidadSectores;
         //Crea la raiz pero no se crea el archivo
         //this.raiz = new Raiz(nomRaiz);
         //Se crea el direcotorio raiz
         this.directorioActual = new Directorio(nomRaiz, nomRaiz, null);
         this.raiz = this.directorioActual;
+        //Se inicializa el arreglo de punteros para el achivo de disco
+        punterosDisco = new ArrayList<>();
         try{
             //Se crea el archivo
             file = new File("C:\\Users\\Andres\\Desktop\\"+nomRaiz+".txt");
-            if (file.exists()){
-               bw = new BufferedWriter(new FileWriter(file));
-               String buffer = "";
-               for (int i = 0; i < cantidadSectores; i++) {
-                   for (int j = 0; j < tamSector; j++) {
-                       buffer = buffer + "X";
-                   }
-                   buffer = buffer + "*";
-               }
-               bw.write(buffer);
+            String buffer = "*";
+            for (int i = 0; i < cantidadSectores; i++) {
+                for (int j = 0; j < tamSector; j++) {
+                    buffer = buffer + "X";
+                }
+                buffer = buffer + "*";
+                punterosDisco.add(-1);
             }
-            else{
-                bw = new BufferedWriter(new FileWriter(file));
-                bw.write("Acabo de crear el fichero de texto.");
-            }
-            bw.close();
+            EscribirArchivo(buffer);
             System.out.println("****La raíz ha sido creada con el nombre de "+nomRaiz+"****");
+            System.out.println(punterosDisco);
         }
         catch(Exception e){
             System.out.println("***Error al crear el el disco****");
-        }
-        
-        
+        } 
     }
     
     //Crea un nuevo archivo en el directorio actual
     public void FLE(String contenido, String nombre, String extension){ 
-        if (directorioActual != null){
-            String ruta = this.directorioActual.ruta + "/" + nombre +"."+ extension;
-            Date date = new Date();
-            Archivo arch = new Archivo(nombre, ruta, extension, 0, contenido.length(), date, date);
-            this.directorioActual.agregarElemento(arch);
-            System.out.println("****El archivo "+nombre+" ha sido creado en la dirección "+directorioActual.ruta+"****");
+        int sector_inicial = EscribirTextoDisco(contenido);
+        if (sector_inicial != -1){
+            if (directorioActual != null){
+                String ruta = this.directorioActual.ruta + "/" + nombre +"."+ extension;
+                Date date = new Date();
+                Archivo arch = new Archivo(nombre, ruta, extension, 0, contenido.length(), date, date, sector_inicial);
+                this.directorioActual.agregarElemento(arch);
+                System.out.println("****El archivo "+nombre+" ha sido creado en la dirección "+directorioActual.ruta+"****");
+            }
+            else{
+                System.out.println("****Error!!! Debe crear un directorio inicial****");
+            }
         }
         else{
             System.out.println("****Error!!! Debe crear un directorio inicial****");
@@ -349,6 +367,7 @@ public class FileSystem {
                     System.out.println("Fecha Creación      >>> "+arch.fecha_creacion);
                     System.out.println("Fecha Modificación  >>> "+arch.fecha_modificacion);
                     System.out.println("Tamaño              >>> "+arch.tamano);
+                    System.out.println("Sector inicial      >>> "+arch.sector_inicial);
                     break;
                 }
             }
@@ -356,6 +375,7 @@ public class FileSystem {
         }
     }
     
+    //Ver el contenido de un archivo
     public void VIEW(String nombre){
         ArrayList<Elemento> elems = this.directorioActual.getElementos();
         int tam = elems.size();
@@ -372,6 +392,7 @@ public class FileSystem {
             i++;
         }
     }
+    
     
     public void REM(String nombre){
         ArrayList<Elemento> elems = this.directorioActual.getElementos();
@@ -458,5 +479,140 @@ public class FileSystem {
             }
             i++;
         }
+    }
+    
+    public String getBufferFile() throws FileNotFoundException, IOException{
+        FileReader fr = new FileReader (this.file);
+        BufferedReader br = new BufferedReader(fr);
+        String linea = br.readLine();
+        return linea;
+    }
+    
+    //Crea el buffer q se va a copiar en el archivo
+    /*
+    En el arreglo de punteros la siglas son:
+    -1 = no hay nada en el sector
+    0 = no tiene referencia a ninguno otro, solo ocupa un sector
+    Culaquier otro positivo = referencia al siguiente sector
+    */
+    //Funcion para escribir texto en el archivo
+    public int EscribirTextoDisco(String texto){
+        String textoDisco = "";
+        try {
+            textoDisco = getBufferFile();
+        } catch (IOException ex) {
+            Logger.getLogger(FileSystem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        String nuevoBuffer = "";
+        int sectores_menos =  0;
+        if (texto.length() <= this.tamSectores*SectoresDisponibles()){
+            int sector = -1;
+            int cont = 0;
+            while(cont < textoDisco.length()-1){
+                if (textoDisco.charAt(cont) == '*'){
+                    if (sector <= this.cantidadSectores){
+                        sector = sector + 1;
+                        if (textoDisco.charAt(cont + 1) == 'X'){ 
+                            this.sectoresDisponibles = this.sectoresDisponibles - ((texto.length()/this.tamSectores) + 1);
+                            String res = EscribirTextoDiscoAuxiliar(textoDisco, texto, sector);
+                            System.out.println("Este es el buffer "+res);
+                            System.out.println("Estos son los punteros "+this.punterosDisco);
+                            System.out.println("Esta es la cantidad de sectores disponibles "+this.sectoresDisponibles);
+                            try {
+                                EscribirArchivo(res);
+                            } catch (IOException ex) {
+                                Logger.getLogger(FileSystem.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            
+                            return sector;
+                        }
+                        else{
+                            cont = cont + this.tamSectores;
+                        }
+                    }
+                }
+                cont = cont + 1;
+            }
+            return -1;
+        }
+        else{
+            System.out.println("****No hay espacio suficiente para el mensaje****");
+            return -1;
+        }
+    }
+    
+    public String EscribirTextoDiscoAuxiliar(String textoDisco, String contenido, int sector){
+        boolean escribir = false;
+        String nuevoBuffer = "";
+        int posContenido = 0;
+        int sectorLogico = -1;
+        int sectorAnterior = 0;
+        for (int i = 0; i < textoDisco.length(); i++) {
+            if (sectorLogico == sector || escribir == true){
+                escribir = true;
+                if (textoDisco.charAt(i) != '*'){
+                    if (posContenido < contenido.length()){
+                        nuevoBuffer = nuevoBuffer + contenido.charAt(posContenido);
+                        posContenido = posContenido + 1;  
+                        if (sectorLogico == sector){
+                            sectorAnterior = sectorLogico;
+                        }
+                        else{
+                            this.punterosDisco.set(sectorAnterior, sectorLogico);
+                            sectorAnterior = sectorLogico;
+                        }
+                    }
+                    else{
+                        this.punterosDisco.set(sectorLogico, 0);
+                        nuevoBuffer = nuevoBuffer + textoDisco.charAt(i);
+                        escribir = false;
+                        sectorLogico = sectorLogico + 1;
+                    }
+                }
+                else{
+                    nuevoBuffer = nuevoBuffer + textoDisco.charAt(i);
+                    sectorLogico = sectorLogico + 1;
+                }
+            }
+            else{
+                nuevoBuffer = nuevoBuffer + textoDisco.charAt(i);
+                if (textoDisco.charAt(i) == '*'){
+                    sectorLogico = sectorLogico + 1;
+                }
+            }
+        }
+        return nuevoBuffer;
+    }
+    
+    //Buscar cantidad de sectores disponibles
+    public int SectoresDisponibles(){
+        int cantidad = 0;
+        for (int i = 0; i < this.punterosDisco.size(); i++) {
+            if (punterosDisco.get(i) == -1){
+                cantidad = cantidad + 1;
+            }
+        }
+        return cantidad;
+    }
+    
+    //Escribe el texto de entrada en el archivo y reemplaza
+    public void EscribirArchivo(String buffer) throws IOException{
+        if (this.file.exists()){
+          try {
+              bw = new BufferedWriter(new FileWriter(file));
+              bw.write(buffer);
+          } catch (IOException ex) {
+              Logger.getLogger(FileSystem.class.getName()).log(Level.SEVERE, null, ex);
+          }
+         }
+         else{
+            try {
+                bw = new BufferedWriter(new FileWriter(file));
+            } catch (IOException ex) {
+                Logger.getLogger(FileSystem.class.getName()).log(Level.SEVERE, null, ex);
+            }
+             bw.write("Acabo de crear el fichero de texto.");
+         }
+         bw.close();
     }
 }
