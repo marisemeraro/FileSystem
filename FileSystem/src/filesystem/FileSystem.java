@@ -60,7 +60,8 @@ public class FileSystem {
         //fileSystem.REM("ArchivoNuevo2");
         
         fileSystem.MFLE("ArchivoNuevo1", "Adios");
-        fileSystem.menu();
+        //fileSystem.menu();
+        
         /*fileSystem.MKDIR("Directorio1");
         fileSystem.CHDIR("Directorio1");
         fileSystem.MKDIR("Directorio1_1");
@@ -408,6 +409,22 @@ public class FileSystem {
         }
     }
     
+    public ArrayList<Integer> listaPunteros(int sectorInicial, int sectorFinal){
+        ArrayList<Integer> listaPunteros = new ArrayList<Integer>();
+        int i =0;
+        int sectorActual = sectorInicial;
+        while(i!=this.punterosDisco.size()){
+            if (sectorActual == sectorFinal){
+                listaPunteros.add(sectorActual);
+                break;
+            }
+            else{
+                listaPunteros.add(sectorActual);
+                sectorActual = this.punterosDisco.get(sectorActual);
+            }i++;
+        }
+        return listaPunteros;
+    }
     public void leerArchivo(int sectorInicial, int sectorFinal){
         String textoDisco = "";
         String resultado="";
@@ -418,12 +435,13 @@ public class FileSystem {
         }
         int cont = 1;
         int sectorActual=0;
+        ArrayList<Integer> listaPunteros = listaPunteros(sectorInicial, sectorFinal);
         while(cont < textoDisco.length()-1){
             if(textoDisco.charAt(cont)=='*'){
                 sectorActual++;
             }
             else{
-                if ((sectorActual>=sectorInicial) && (sectorActual<=sectorFinal)){
+                if ((sectorActual>=sectorInicial) && (sectorActual<=sectorFinal) && listaPunteros.contains(sectorActual)){
                     if(textoDisco.charAt(cont) != 'X')
                         resultado = resultado + textoDisco.charAt(cont);
                 }
@@ -471,9 +489,10 @@ public class FileSystem {
     }
     
     public void eliminarPunteros (int sectorInicial, int sectorFinal){
+        ArrayList<Integer> listaPunteros = listaPunteros(sectorInicial, sectorFinal);
         int i = 0;
         while (i!= this.punterosDisco.size()){
-            if (i >= sectorInicial && i<= sectorFinal){
+            if (i >= sectorInicial && i<= sectorFinal && listaPunteros.contains(i)){
                 this.punterosDisco.set(i, -1);
             }
             i++;
@@ -485,6 +504,7 @@ public class FileSystem {
         int sectorFinal = arch.sector_final;
         String textoDisco = "";
         String resultado="";
+        ArrayList<Integer> listaPunteros = listaPunteros(arch.sector_inicial, arch.sector_final);
         try {
             textoDisco = getBufferFile();
         } catch (IOException ex) {
@@ -498,7 +518,7 @@ public class FileSystem {
                 resultado = resultado + textoDisco.charAt(cont);
             }
             else{
-                if ((sectorActual>=sectorInicial) && (sectorActual<=sectorFinal)){
+                if ((sectorActual>=sectorInicial) && (sectorActual<=sectorFinal) && listaPunteros.contains(sectorActual)){
                     resultado = resultado + 'X';
                 }
                 else{
