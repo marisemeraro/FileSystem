@@ -16,6 +16,7 @@ import java.util.Date;
  */
 public class Directorio extends Elemento{
     private ArrayList<Elemento> elementos;
+    private boolean raiz;
 
     public ArrayList<Elemento> getElementos() {
         return elementos;
@@ -25,12 +26,33 @@ public class Directorio extends Elemento{
         this.elementos = elementos;
     }
     
-    public Directorio(String nombre, String ruta){
+    public Directorio(String nombre, String ruta, Elemento ultima_dir){
         this.nombre = nombre;
         this.ruta = ruta;
+        this.elementos = new ArrayList<>();
+        this.ultima_direccion = ultima_dir;
+        this.raiz = false;
+    }
+
+    public boolean isRaiz() {
+        return raiz;
+    }
+
+    public void setRaiz(boolean raiz) {
+        this.raiz = raiz;
     }
     
     public void agregarElemento(Elemento elem){
         this.elementos.add(elem);
     }
+
+    public Elemento getUltima_direccion() {
+        return ultima_direccion;
+    }
+
+    public void setUltima_direccion(Elemento ultima_direccion) {
+        this.ultima_direccion = ultima_direccion;
+    }
+    
+    
 }

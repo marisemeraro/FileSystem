@@ -5,16 +5,17 @@
  */
 package filesystem;
 
-import java.util.Date;
+import java.util.ArrayList;
 
 /**
  *
  * @author Mariana
  */
-public class Elemento {
-    protected String nombre;
-    protected String ruta;
-    protected Date fecha_creacion;
-    protected Date fecha_modificacion;
-    protected Elemento ultima_direccion;
+public class Raiz {
+    public ArrayList<Elemento> elementos;
+    public String nombre;
+    
+    public Raiz(String nuevoNom){
+        this.nombre = nuevoNom;
+    }
 }
