@@ -31,6 +31,7 @@ public class FileSystem {
     public int cantidadSectores;
     public int tamSectores;
     public int sectoresDisponibles;
+    public int ultimoSector;
     
     //public String rutaActual;
     public int nivelActual;
@@ -45,13 +46,25 @@ public class FileSystem {
         FileSystem fileSystem = new FileSystem();
        
         fileSystem.CRT(10, 10, "Root");
-        fileSystem.FLE("RonaldBolanosRodriguez", "ArchivoNuevo", "txt");
+        fileSystem.FLE("Ronald Bolanos Rodriguez", "ArchivoNuevo", "txt");
         fileSystem.FLE("Hola", "ArchivoNuevo1", "txt");
-         fileSystem.FLE("Mariana Rojas", "ArchivoNuevo2", "txt");
+        fileSystem.FLE("Mariana Rojas", "ArchivoNuevo2", "txt");
         fileSystem.TREE();
         fileSystem.PPT("ArchivoNuevo");
         fileSystem.PPT("ArchivoNuevo1");
         fileSystem.PPT("ArchivoNuevo2");
+        
+        //fileSystem.REM("ArchivoNuevo");
+        fileSystem.REM("ArchivoNuevo1");
+        fileSystem.FLE("Holamaequehacenuevo", "ArchivoNuevo1", "txt");
+        fileSystem.PPT("ArchivoNuevo");
+        fileSystem.PPT("ArchivoNuevo1");
+        fileSystem.PPT("ArchivoNuevo2");
+        //fileSystem.REM("ArchivoNuevo2");
+        
+        fileSystem.MFLE("ArchivoNuevo1", "Adios");
+        //fileSystem.menu();
+        
         /*fileSystem.MKDIR("Directorio1");
         fileSystem.CHDIR("Directorio1");
         fileSystem.MKDIR("Directorio1_1");
@@ -222,6 +235,7 @@ public class FileSystem {
    
     //Crear un disco virtual. Raiz y directorio raiz
     public void CRT(int cantidadSectores, int tamSector, String nomRaiz){
+        this.ultimoSector = -1;
         this.cantidadSectores = cantidadSectores;
         this.tamSectores = tamSector;
         this.sectoresDisponibles = cantidadSectores;
@@ -234,7 +248,9 @@ public class FileSystem {
         punterosDisco = new ArrayList<>();
         try{
             //Se crea el archivo
-            file = new File("C:\\Users\\Andres\\Desktop\\"+nomRaiz+".txt");
+            //C:\\Users\\Andres\\Desktop\\
+            //C:\\Users\\Mariana\\Desktop\\
+            this.file = new File("C:\\Users\\Andres\\Desktop\\"+nomRaiz+".txt");
             String buffer = "*";
             for (int i = 0; i < cantidadSectores; i++) {
                 for (int j = 0; j < tamSector; j++) {
@@ -259,7 +275,7 @@ public class FileSystem {
             if (directorioActual != null){
                 String ruta = this.directorioActual.ruta + "/" + nombre +"."+ extension;
                 Date date = new Date();
-                Archivo arch = new Archivo(nombre, ruta, extension, 0, contenido.length(), date, date, sector_inicial);
+                Archivo arch = new Archivo(nombre, ruta, extension, 0, contenido.length(), date, date, sector_inicial, this.ultimoSector);
                 this.directorioActual.agregarElemento(arch);
                 System.out.println("****El archivo "+nombre+" ha sido creado en la dirección "+directorioActual.ruta+"****");
             }
@@ -343,6 +359,10 @@ public class FileSystem {
                     Archivo arch = (Archivo) elemento;
                     Date date = new Date();
                     arch.fecha_modificacion = date;
+                    REM_Archivo(arch); //borra contenido de archivo en disco
+                    int sector_inicial = EscribirTextoDisco(nuevoContenido);
+                    arch.sector_inicial = sector_inicial;
+                    arch.sector_final = this.ultimoSector;
                     //CAMBIAR CONTENIDO
                     break;
                 }
@@ -368,6 +388,7 @@ public class FileSystem {
                     System.out.println("Fecha Modificación  >>> "+arch.fecha_modificacion);
                     System.out.println("Tamaño              >>> "+arch.tamano);
                     System.out.println("Sector inicial      >>> "+arch.sector_inicial);
+                    System.out.println("Sector final        >>> "+arch.sector_final);
                     break;
                 }
             }
@@ -385,7 +406,7 @@ public class FileSystem {
             if(elemento instanceof Archivo){
                 if (elemento.nombre.equals(nombre)){
                     Archivo arch = (Archivo) elemento;
-                    //LEER CONTENIDO
+                    leerArchivo(arch.sector_inicial, arch.sector_final);
                     break;
                 }
             }
@@ -393,6 +414,49 @@ public class FileSystem {
         }
     }
     
+    public ArrayList<Integer> listaPunteros(int sectorInicial, int sectorFinal){
+        ArrayList<Integer> listaPunteros = new ArrayList<Integer>();
+        int i =0;
+        int sectorActual = sectorInicial;
+        while(i!=this.punterosDisco.size()){
+            if (sectorActual == sectorFinal){
+                listaPunteros.add(sectorActual);
+                break;
+            }
+            else{
+                listaPunteros.add(sectorActual);
+                sectorActual = this.punterosDisco.get(sectorActual);
+            }i++;
+        }
+        return listaPunteros;
+    }
+    public void leerArchivo(int sectorInicial, int sectorFinal){
+        String textoDisco = "";
+        String resultado="";
+        try {
+            textoDisco = getBufferFile();
+        } catch (IOException ex) {
+            Logger.getLogger(FileSystem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        int cont = 1;
+        int sectorActual=0;
+        ArrayList<Integer> listaPunteros = listaPunteros(sectorInicial, sectorFinal);
+        while(cont < textoDisco.length()-1){
+            if(textoDisco.charAt(cont)=='*'){
+                sectorActual++;
+            }
+            else{
+                if ((sectorActual>=sectorInicial) && (sectorActual<=sectorFinal) && listaPunteros.contains(sectorActual)){
+                    if(textoDisco.charAt(cont) != 'X')
+                        resultado = resultado + textoDisco.charAt(cont);
+                }
+            }
+            cont++;
+        }
+        System.out.println("");
+        System.out.println("El contenido del archivo es:");
+        System.out.println(resultado);
+    }
     
     public void REM(String nombre){
         ArrayList<Elemento> elems = this.directorioActual.getElementos();
@@ -418,8 +482,84 @@ public class FileSystem {
         }
     }
     
+    public int buscarSector(int sector){
+        int i = 0;
+        while (i!= this.punterosDisco.size()){
+            if (this.punterosDisco.get(i)==sector){
+                return i;
+            }
+            i++;
+        }
+        return -3;
+    }
+    
+    public void eliminarPunteros (int sectorInicial, int sectorFinal){
+        ArrayList<Integer> listaPunteros = listaPunteros(sectorInicial, sectorFinal);
+        int i = 0;
+        while (i!= this.punterosDisco.size()){
+            if (i >= sectorInicial && i<= sectorFinal && listaPunteros.contains(i)){
+                this.punterosDisco.set(i, -1);
+            }
+            i++;
+        }
+    }
+    
     public void REM_Archivo(Archivo arch){
-        //Eliminar de disco
+        int sectorInicial = arch.sector_inicial;
+        int sectorFinal = arch.sector_final;
+        String textoDisco = "";
+        String resultado="";
+        ArrayList<Integer> listaPunteros = listaPunteros(arch.sector_inicial, arch.sector_final);
+        try {
+            textoDisco = getBufferFile();
+        } catch (IOException ex) {
+            Logger.getLogger(FileSystem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        int cont = 0;
+        int sectorActual=-1;
+        while(cont < textoDisco.length()-1){
+            if(textoDisco.charAt(cont)=='*'){
+                sectorActual++;
+                resultado = resultado + textoDisco.charAt(cont);
+            }
+            else{
+                if ((sectorActual>=sectorInicial) && (sectorActual<=sectorFinal) && listaPunteros.contains(sectorActual)){
+                    resultado = resultado + 'X';
+                }
+                else{
+                    resultado = resultado + textoDisco.charAt(cont);
+                }
+            }
+            cont++;
+        }
+
+        try {
+            EscribirArchivo(resultado);
+        } catch (IOException ex) {
+            Logger.getLogger(FileSystem.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        int puntero = buscarSector(sectorInicial);
+        //Nadie lo apunta (es el primero)
+        if(puntero==-3){
+            eliminarPunteros(sectorInicial,sectorFinal);
+        }
+        else{
+            //es el ultimo sector
+            if(this.punterosDisco.get(sectorFinal) == -2){
+                this.ultimoSector = puntero;
+                this.punterosDisco.set(puntero, -2);
+            }
+            else{
+                this.punterosDisco.set(puntero, punterosDisco.get(sectorFinal));
+            }
+        }
+        eliminarPunteros(sectorInicial,sectorFinal);
+        
+        System.out.println("");
+        System.out.println("El contenido del archivo es:");
+        System.out.println(resultado);
+        System.out.println(this.punterosDisco);
     }
     
     public void REM_Directorio(Directorio dir){
@@ -492,6 +632,7 @@ public class FileSystem {
     /*
     En el arreglo de punteros la siglas son:
     -1 = no hay nada en el sector
+    -2 = representa el ultimo sector ocupado
     0 = no tiene referencia a ninguno otro, solo ocupa un sector
     Culaquier otro positivo = referencia al siguiente sector
     */
@@ -523,7 +664,6 @@ public class FileSystem {
                             } catch (IOException ex) {
                                 Logger.getLogger(FileSystem.class.getName()).log(Level.SEVERE, null, ex);
                             }
-                            
                             return sector;
                         }
                         else{
@@ -542,18 +682,26 @@ public class FileSystem {
     }
     
     public String EscribirTextoDiscoAuxiliar(String textoDisco, String contenido, int sector){
+        int ultimo_temp = this.ultimoSector;
         boolean escribir = false;
         String nuevoBuffer = "";
         int posContenido = 0;
         int sectorLogico = -1;
         int sectorAnterior = 0;
-        for (int i = 0; i < textoDisco.length(); i++) {
+        int contador = 0;
+        boolean permitir = false;
+        while (contador < textoDisco.length()) {
             if (sectorLogico == sector || escribir == true){
                 escribir = true;
-                if (textoDisco.charAt(i) != '*'){
+                if (textoDisco.charAt(contador) != '*'){
                     if (posContenido < contenido.length()){
-                        nuevoBuffer = nuevoBuffer + contenido.charAt(posContenido);
-                        posContenido = posContenido + 1;  
+                        if (permitir){
+                            nuevoBuffer = nuevoBuffer + contenido.charAt(posContenido);
+                            posContenido = posContenido + 1;  
+                        }
+                        else{
+                            nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
+                        }
                         if (sectorLogico == sector){
                             sectorAnterior = sectorLogico;
                         }
@@ -564,23 +712,41 @@ public class FileSystem {
                     }
                     else{
                         this.punterosDisco.set(sectorLogico, 0);
-                        nuevoBuffer = nuevoBuffer + textoDisco.charAt(i);
+                        nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
                         escribir = false;
                         sectorLogico = sectorLogico + 1;
                     }
                 }
                 else{
-                    nuevoBuffer = nuevoBuffer + textoDisco.charAt(i);
+                    permitir = true;
+                    if (textoDisco.charAt(contador+1) != 'X'){
+                        permitir = false;
+                    }
+                    nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
                     sectorLogico = sectorLogico + 1;
                 }
             }
             else{
-                nuevoBuffer = nuevoBuffer + textoDisco.charAt(i);
-                if (textoDisco.charAt(i) == '*'){
+                permitir = true;
+                if (textoDisco.length() < contador+1){
+                    if (textoDisco.charAt(contador+1) != 'X'){
+                        permitir = false;
+                    }
+                }
+                nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
+                if (textoDisco.charAt(contador) == '*'){
                     sectorLogico = sectorLogico + 1;
                 }
             }
+            contador++;
         }
+
+        if(this.ultimoSector != -1){
+            this.punterosDisco.set(ultimo_temp, sector);
+        }
+        this.ultimoSector = sectorAnterior;
+        this.punterosDisco.set(this.ultimoSector, -2);
+        
         return nuevoBuffer;
     }
     

@@ -16,8 +16,9 @@ public class Archivo extends Elemento{
     protected int sector;
     protected int tamano;
     protected int sector_inicial;
+    protected int sector_final;
     
-    public Archivo(String nombre, String ruta, String extension, int sector, int tamano, Date f_creacion, Date f_modificacion, int sector_inicial){
+    public Archivo(String nombre, String ruta, String extension, int sector, int tamano, Date f_creacion, Date f_modificacion, int sector_inicial, int sector_final){
         this.nombre = nombre;
         this.ruta = ruta;
         this.extension = extension;
@@ -26,6 +27,7 @@ public class Archivo extends Elemento{
         this.fecha_creacion = f_creacion;
         this.fecha_modificacion = f_modificacion;
         this.sector_inicial = sector_inicial;
+        this.sector_final = sector_final;
     }
  
     
