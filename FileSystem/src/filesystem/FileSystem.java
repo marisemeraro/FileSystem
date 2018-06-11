@@ -690,6 +690,7 @@ public class FileSystem {
         int sectorAnterior = 0;
         int contador = 0;
         boolean permitir = false;
+        System.out.println(sector);
         while (contador < textoDisco.length()) {
             if (sectorLogico == sector || escribir == true){
                 escribir = true;
@@ -706,8 +707,11 @@ public class FileSystem {
                             sectorAnterior = sectorLogico;
                         }
                         else{
-                            this.punterosDisco.set(sectorAnterior, sectorLogico);
-                            sectorAnterior = sectorLogico;
+                            if (permitir){
+                               this.punterosDisco.set(sectorAnterior, sectorLogico);            
+                                sectorAnterior = sectorLogico; 
+                            }
+                            
                         }
                     }
                     else{
@@ -719,8 +723,10 @@ public class FileSystem {
                 }
                 else{
                     permitir = true;
-                    if (textoDisco.charAt(contador+1) != 'X'){
-                        permitir = false;
+                    if (textoDisco.length() > contador+1){
+                        if (textoDisco.charAt(contador+1) != 'X'){
+                            permitir = false;
+                        }
                     }
                     nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
                     sectorLogico = sectorLogico + 1;
@@ -728,13 +734,13 @@ public class FileSystem {
             }
             else{
                 permitir = true;
-                if (textoDisco.length() < contador+1){
-                    if (textoDisco.charAt(contador+1) != 'X'){
-                        permitir = false;
-                    }
-                }
                 nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
                 if (textoDisco.charAt(contador) == '*'){
+                    if (textoDisco.length() > contador+1){
+                        if (textoDisco.charAt(contador+1) != 'X'){
+                            permitir = false;
+                        }
+                    }
                     sectorLogico = sectorLogico + 1;
                 }
             }
