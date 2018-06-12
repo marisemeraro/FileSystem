@@ -46,29 +46,34 @@ public class FileSystem {
         FileSystem fileSystem = new FileSystem();
        
         fileSystem.CRT(10, 10, "Root");
-        fileSystem.FLE("Ronald Bolanos Rodriguez", "ArchivoNuevo", "txt");
+        /*fileSystem.FLE("Ronald Bolanos Rodriguez", "ArchivoNuevo", "txt");
         fileSystem.FLE("Hola", "ArchivoNuevo1", "txt");
         fileSystem.FLE("Mariana Rojas", "ArchivoNuevo2", "txt");
         fileSystem.TREE();
         fileSystem.PPT("ArchivoNuevo");
         fileSystem.PPT("ArchivoNuevo1");
-        fileSystem.PPT("ArchivoNuevo2");
+        fileSystem.PPT("ArchivoNuevo2");*/
         
         //fileSystem.REM("ArchivoNuevo");
-        fileSystem.REM("ArchivoNuevo1");
-        fileSystem.FLE("Hola", "ArchivoNuevo1", "txt");
+        /*fileSystem.REM("ArchivoNuevo1");
+        fileSystem.FLE("Holamaequehacenuevo", "ArchivoNuevo1", "txt");
+        fileSystem.PPT("ArchivoNuevo");
+        fileSystem.PPT("ArchivoNuevo1");
+        fileSystem.PPT("ArchivoNuevo2");
         //fileSystem.REM("ArchivoNuevo2");
         
-        fileSystem.MFLE("ArchivoNuevo1", "Adios");
+        fileSystem.MFLE("ArchivoNuevo1", "Adios");*/
         //fileSystem.menu();
         
-        /*fileSystem.MKDIR("Directorio1");
+        fileSystem.MKDIR("Directorio1");
         fileSystem.CHDIR("Directorio1");
+        fileSystem.FLE("Ronald", "Archivo1", "txt");
         fileSystem.MKDIR("Directorio1_1");
         fileSystem.CHDIR("Directorio1_1");
         fileSystem.FLE("Ronald", "Archivo1", "txt");
         fileSystem.MKDIR("Directorio1_1_1");
         fileSystem.FLE("Ronald", "Archivo2", "txt");
+        fileSystem.FLE("Ronald", "Archivo3", "txt");
         fileSystem.CHDIR("Directorio1_1_1");
         fileSystem.FLE("Ronald", "Archivo3", "txt");
         fileSystem.LDIR();
@@ -76,7 +81,7 @@ public class FileSystem {
         fileSystem.CHDIR("..");   
         fileSystem.CHDIR("..");  
         fileSystem.CHDIR(".."); 
-        fileSystem.menu();*/
+        fileSystem.menu();
         return;
     }
     
@@ -103,7 +108,6 @@ public class FileSystem {
             System.out.println("La direccion actual en el File System es :"+this.directorioActual.ruta);
             System.out.println("Escriba la opción que desee");
             opcion = scan.nextInt();
-            
             switch(opcion){
                 case 1:
                     opCRT();
@@ -132,6 +136,7 @@ public class FileSystem {
                 case 9:
                     break;
                 case 10:
+                    opMOV();
                     break;
                 case 11:
                     opREM();
@@ -140,6 +145,7 @@ public class FileSystem {
                     TREE();
                     break;
                 case 13:
+                    opFIND();
                     break;
                 case 14:
                     return;
@@ -229,6 +235,41 @@ public class FileSystem {
         REM(nombre);
     }
     
+    public void opMOV(){
+        Scanner scan = new Scanner(System.in);
+        String nombreViejo;
+        String nombreNuevo;
+        String nuevaRuta;
+        System.out.println("Ingrese el nombre del elemento a mover");
+        nombreViejo = scan.nextLine();
+        System.out.println("Ingrese el nuevo nombre del elemento a mover");
+        nombreNuevo = scan.nextLine();
+        System.out.println("Ingrese la nueva Ruta");
+        nuevaRuta = scan.nextLine();
+        MOV(nombreViejo, nombreNuevo, nuevaRuta);
+    }
+    public void opFIND(){
+        Scanner scan = new Scanner(System.in);
+        String nombre;
+        System.out.println("Ingrese 1 para buscar por nombre, 2 para buscar por extensión");
+        int op = scan.nextInt();
+        if (op == 1){
+            System.out.println("Ingrese el nombre a buscar");
+            nombre = scan.nextLine();
+            nombre = scan.nextLine();
+            System.out.println("");
+            System.out.println("Direcciones: ");
+            FIND(this.raiz.getElementos(), nombre);
+        }
+        else{
+            System.out.println("Ingrese la extensión a buscar");
+            nombre = scan.nextLine();
+            nombre = scan.nextLine();
+            System.out.println("");
+            System.out.println("Direcciones: ");
+            FIND_aux(this.raiz.getElementos(), nombre);
+        }
+    }
    
     //Crear un disco virtual. Raiz y directorio raiz
     public void CRT(int cantidadSectores, int tamSector, String nomRaiz){
@@ -245,6 +286,8 @@ public class FileSystem {
         punterosDisco = new ArrayList<>();
         try{
             //Se crea el archivo
+            //C:\\Users\\Andres\\Desktop\\
+            //C:\\Users\\Mariana\\Desktop\\
             this.file = new File("C:\\Users\\Mariana\\Desktop\\"+nomRaiz+".txt");
             String buffer = "*";
             for (int i = 0; i < cantidadSectores; i++) {
@@ -384,6 +427,7 @@ public class FileSystem {
                     System.out.println("Tamaño              >>> "+arch.tamano);
                     System.out.println("Sector inicial      >>> "+arch.sector_inicial);
                     System.out.println("Sector final        >>> "+arch.sector_final);
+                    System.out.println("Ruta                >>> "+arch.ruta);
                     break;
                 }
             }
@@ -598,6 +642,117 @@ public class FileSystem {
         System.out.println(" ");
     }
     
+    public void FIND(ArrayList<Elemento> elems, String nombre){
+        int tam = elems.size();
+        int i = 0;
+        while(i!=tam){
+            Elemento  ele = elems.get(i);
+            if (ele.nombre.equals(nombre))
+                    System.out.println(ele.ruta);
+            if (ele instanceof Directorio){
+                Directorio dir = (Directorio) elems.get(i);
+                FIND(dir.getElementos(), nombre);
+            }i++;
+        }
+    }
+    
+    public void FIND_aux(ArrayList<Elemento> elems, String extension){
+        int tam = elems.size();
+        int i = 0;
+        while(i!=tam){
+            Elemento  ele = elems.get(i);
+            if (ele instanceof Archivo){
+                Archivo arch = (Archivo) elems.get(i);
+                if (arch.extension.equals(extension))
+                    System.out.println(arch.ruta);
+            }
+            else{
+               Directorio dir = (Directorio) elems.get(i);
+               FIND_aux(dir.getElementos(), extension);
+            }i++;
+        }
+    }
+    
+    public void MOV(String nombreViejo, String nombreNuevo, String nuevaRuta){
+        ArrayList<Elemento> elems = this.directorioActual.getElementos();
+        int tam = elems.size();
+        int i = 0;
+        while(i!=tam){
+            Elemento  ele = elems.get(i);
+            if (ele.nombre.equals(nombreViejo)){
+                if(MOV_aux(ele, nuevaRuta, nombreNuevo))
+                    elems.remove(i);
+                else
+                    System.out.println("No se pudo mover");
+                break;
+            }
+            i++;
+        }
+    }
+    
+    public boolean MOV_aux(Elemento elemento, String ruta, String nuevoNombre){
+        ArrayList<Elemento> elems = this.raiz.getElementos();
+        int tam = elems.size();
+        int i = 0;
+        while(i!=tam){
+            Elemento ele = elems.get(i);
+            if (ele instanceof Directorio && ele.ruta.equals(ruta)){
+                Directorio directorio = (Directorio) ele;
+                if (buscarNombre(nuevoNombre, directorio))
+                        return false;
+                Date date = new Date();
+                elemento.nombre = nuevoNombre;
+                elemento.fecha_modificacion = date;
+                if(elemento instanceof Archivo){
+                    Archivo arch = (Archivo) elemento;
+                    arch.fecha_modificacion = date;
+                    elemento.ruta = directorio.ruta + "/" + arch.nombre +"."+ arch.extension;
+                }
+                else{
+                    Directorio dir = (Directorio) elemento;
+                    dir.fecha_modificacion = date;
+                    elemento.ruta = directorio.ruta + "/" + elemento.nombre;
+                    dir.ruta = directorio.ruta + "/" + dir.nombre;
+                    cambiarRuta(dir);
+                }
+                directorio.agregarElemento(elemento);
+                return true;
+            }
+            i++;
+        }
+        return false;
+    }
+    public void cambiarRuta(Directorio dir){
+        ArrayList<Elemento> elems = dir.getElementos();
+        int tam = elems.size();
+        int i = 0;
+        while(i!=tam){
+            Elemento  ele = elems.get(i);
+            if (ele instanceof Archivo){
+                Archivo arch = (Archivo) elems.get(i);
+                arch.ruta = dir.ruta + "/" + arch.nombre +"."+ arch.extension;
+            }
+            else{
+                Directorio directorio = (Directorio) elems.get(i);
+                directorio.ruta = dir.ruta + "/" + directorio.nombre;
+                cambiarRuta(directorio);
+            }
+            i++;
+        }
+    }
+    public boolean buscarNombre(String nombre, Directorio dir){
+        ArrayList<Elemento> elems = dir.getElementos();
+        int tam = elems.size();
+        int i = 0;
+        while(i!=tam){
+            Elemento  ele = elems.get(i);
+            if (ele.nombre.equals(nombre)){
+                return true;
+            }
+            i++;
+        }
+        return false;
+    }
     public void printDir(ArrayList<Elemento> elems, String espacios){
         int tam = elems.size();
         int i = 0;
@@ -683,39 +838,63 @@ public class FileSystem {
         int posContenido = 0;
         int sectorLogico = -1;
         int sectorAnterior = 0;
-        for (int i = 0; i < textoDisco.length(); i++) {
+        int contador = 0;
+        boolean permitir = false;
+        System.out.println(sector);
+        while (contador < textoDisco.length()) {
             if (sectorLogico == sector || escribir == true){
                 escribir = true;
-                if (textoDisco.charAt(i) != '*'){
+                if (textoDisco.charAt(contador) != '*'){
                     if (posContenido < contenido.length()){
-                        nuevoBuffer = nuevoBuffer + contenido.charAt(posContenido);
-                        posContenido = posContenido + 1;  
+                        if (permitir){
+                            nuevoBuffer = nuevoBuffer + contenido.charAt(posContenido);
+                            posContenido = posContenido + 1;  
+                        }
+                        else{
+                            nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
+                        }
                         if (sectorLogico == sector){
                             sectorAnterior = sectorLogico;
                         }
                         else{
-                            this.punterosDisco.set(sectorAnterior, sectorLogico);
-                            sectorAnterior = sectorLogico;
+                            if (permitir){
+                               this.punterosDisco.set(sectorAnterior, sectorLogico);            
+                                sectorAnterior = sectorLogico; 
+                            }
+                            
                         }
                     }
                     else{
                         this.punterosDisco.set(sectorLogico, 0);
-                        nuevoBuffer = nuevoBuffer + textoDisco.charAt(i);
+                        nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
                         escribir = false;
                         sectorLogico = sectorLogico + 1;
                     }
                 }
                 else{
-                    nuevoBuffer = nuevoBuffer + textoDisco.charAt(i);
+                    permitir = true;
+                    if (textoDisco.length() > contador+1){
+                        if (textoDisco.charAt(contador+1) != 'X'){
+                            permitir = false;
+                        }
+                    }
+                    nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
                     sectorLogico = sectorLogico + 1;
                 }
             }
             else{
-                nuevoBuffer = nuevoBuffer + textoDisco.charAt(i);
-                if (textoDisco.charAt(i) == '*'){
+                permitir = true;
+                nuevoBuffer = nuevoBuffer + textoDisco.charAt(contador);
+                if (textoDisco.charAt(contador) == '*'){
+                    if (textoDisco.length() > contador+1){
+                        if (textoDisco.charAt(contador+1) != 'X'){
+                            permitir = false;
+                        }
+                    }
                     sectorLogico = sectorLogico + 1;
                 }
             }
+            contador++;
         }
 
         if(this.ultimoSector != -1){
