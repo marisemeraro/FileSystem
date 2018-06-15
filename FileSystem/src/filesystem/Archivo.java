@@ -29,6 +29,14 @@ public class Archivo extends Elemento{
         this.sector_inicial = sector_inicial;
         this.sector_final = sector_final;
     }
+
+    public String getExtension() {
+        return extension;
+    }
+
+    public void setExtension(String extension) {
+        this.extension = extension;
+    }
  
     
 }
