@@ -107,53 +107,58 @@ public class FileSystem {
             System.out.println("14. Salir");
             System.out.println("La direccion actual en el File System es :"+this.directorioActual.ruta);
             System.out.println("Escriba la opción que desee");
-            opcion = scan.nextInt();
-            switch(opcion){
-                case 1:
-                    opCRT();
-                    break;
-                case 2:
-                    opFLE();
-                    break;
-                case 3:
-                    opMKDIR();
-                    break;
-                case 4:
-                    opCHDIR();
-                    break;
-                case 5:
-                    LDIR();
-                    break;
-                case 6:
-                    opMFLE();
-                    break;
-                case 7:
-                    opPPT();
-                    break;
-                case 8:
-                    opVIEW();
-                    break;
-                case 9:
-                    break;
-                case 10:
-                    opMOV();
-                    break;
-                case 11:
-                    opREM();
-                    break;
-                case 12:
-                    TREE();
-                    break;
-                case 13:
-                    opFIND();
-                    break;
-                case 14:
-                    return;
-                default:
-                    System.out.println("Error");
+            try{
+                opcion = scan.nextInt();
+                switch(opcion){
+                    case 1:
+                        opCRT();
+                        break;
+                    case 2:
+                        opFLE();
+                        break;
+                    case 3:
+                        opMKDIR();
+                        break;
+                    case 4:
+                        opCHDIR();
+                        break;
+                    case 5:
+                        LDIR();
+                        break;
+                    case 6:
+                        opMFLE();
+                        break;
+                    case 7:
+                        opPPT();
+                        break;
+                    case 8:
+                        opVIEW();
+                        break;
+                    case 9:
+                        break;
+                    case 10:
+                        opMOV();
+                        break;
+                    case 11:
+                        opREM();
+                        break;
+                    case 12:
+                        TREE();
+                        break;
+                    case 13:
+                        opFIND();
+                        break;
+                    case 14:
+                        return;
+                    default:
+                        System.out.println("Error");
+                }
             }
-            
-        }
+            catch(Exception e){
+                System.out.println("Error");
+                return;
+            }
+       }
     }
     public void opCRT(){
         Scanner scan = new Scanner(System.in);
@@ -251,16 +256,15 @@ public class FileSystem {
     public void opFIND(){
         Scanner scan = new Scanner(System.in);
         String nombre;
-        System.out.println("Ingrese 1 para buscar por nombre, 2 para buscar por extensión");
-        int op = scan.nextInt();
-        if (op == 1){
-            System.out.println("Ingrese el nombre a buscar");
-            nombre = scan.nextLine();
-            nombre = scan.nextLine();
-            System.out.println("");
-            System.out.println("Direcciones: ");
-            FIND(this.raiz.getElementos(), nombre);
-        }
+        //System.out.println("Ingrese 1 para buscar por nombre, 2 para buscar por extensión");
+        //int op = scan.nextInt();
+        //if (op == 1){
+        System.out.println("Ingrese el nombre a buscar");
+        nombre = scan.nextLine();
+        System.out.println("");
+        System.out.println("Direcciones: ");
+        FIND(this.raiz.getElementos(), nombre);
+        /*}
         else{
             System.out.println("Ingrese la extensión a buscar");
             nombre = scan.nextLine();
@@ -268,7 +272,7 @@ public class FileSystem {
             System.out.println("");
             System.out.println("Direcciones: ");
             FIND_aux(this.raiz.getElementos(), nombre);
-        }
+        }*/
     }
    
     //Crear un disco virtual. Raiz y directorio raiz
@@ -349,6 +353,40 @@ public class FileSystem {
         if (nombre.equals("..")){
             if (this.directorioActual.getUltima_direccion() != null){
                 this.directorioActual = (Directorio) this.directorioActual.getUltima_direccion();
+            }
+        }
+        else if (nombre.contains("..")){
+            String replace = nombre.replaceFirst("../", "");
+            if (this.directorioActual.getUltima_direccion() != null){
+                this.directorioActual = (Directorio) this.directorioActual.getUltima_direccion();
+            }
+            if (!replace.equals("")){
+                System.out.println(this.directorioActual.ruta);
+                CHDIR(replace);
+            }
+        }
+        else if (nombre.contains("/")){
+            int pos = 0;
+            String nuevoNombre = "";
+            while(nombre.charAt(pos)!='/'){
+                nuevoNombre = nuevoNombre + nombre.charAt(pos);
+                pos++;
+            }
+            while(i!=tam){
+                Elemento  ele = elems.get(i);
+                if (ele instanceof Directorio){
+                    Directorio dir = (Directorio) ele;
+                    if (dir.nombre.equals(nuevoNombre)){
+                        dir.setUltima_direccion(this.directorioActual);
+                        this.directorioActual = dir;
+                    }
+                }
+                i++;
+            }
+            String replaceFirst = nombre.replaceFirst(nuevoNombre+"/", "");
+            if (!replaceFirst.equals("")){
+                System.out.println(this.directorioActual.ruta);
+                CHDIR(replaceFirst);
             }
         }
         else{
@@ -645,10 +683,15 @@ public class FileSystem {
     public void FIND(ArrayList<Elemento> elems, String nombre){
         int tam = elems.size();
         int i = 0;
+        nombre = nombre.replace("*", "");
         while(i!=tam){
             Elemento  ele = elems.get(i);
-            if (ele.nombre.equals(nombre))
+            if (ele instanceof Archivo){
+                Archivo arch  = (Archivo)ele;
+                String name =  arch.nombre+arch.getExtension();
+                if (name.contains(nombre))
                     System.out.println(ele.ruta);
+            }
             if (ele instanceof Directorio){
                 Directorio dir = (Directorio) elems.get(i);
                 FIND(dir.getElementos(), nombre);
@@ -696,8 +739,12 @@ public class FileSystem {
         int i = 0;
         while(i!=tam){
             Elemento ele = elems.get(i);
-            if (ele instanceof Directorio && ele.ruta.equals(ruta)){
-                Directorio directorio = (Directorio) ele;
+            if (ele instanceof Directorio && ele.ruta.equals(ruta) || ruta.equals(this.raiz.ruta)){
+                Directorio directorio;
+                if (ruta.equals(this.raiz.ruta))
+                    directorio = raiz;
+                else
+                    directorio = (Directorio) ele;
                 if (buscarNombre(nuevoNombre, directorio))
                         return false;
                 Date date = new Date();
